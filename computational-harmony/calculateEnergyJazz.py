@@ -1,4 +1,4 @@
-import itertools as it
+#import itertools as it
 
 from operator import itemgetter
 
@@ -32,7 +32,9 @@ class Scale:
 # asymmetrical scales
 cMajor = Scale("C","Major",[0,2,4,5,7,9,11])
 cAltered = Scale("C","Altered", [0,1,3,4,6,8,10])
-cHarmonic = Scale("C","Harmonic Minor", [0,2,3,5,7,8,11])
+cHarmonicMajor = Scale("C", "Harmonic Major", [0, 2, 4, 5, 7, 8, 11])
+cHarmonicMinor = Scale("C", "Harmonic Minor", [0, 2, 3, 5, 7, 8, 11])
+
 
 #######################cMajor.testScale()
 
@@ -59,14 +61,16 @@ for i, v in enumerate (['C natural', 'C sharp', 'D natural', 'E flat','E natural
 def getAsymmetricJazzScales():
     asymmetricJazzScalesDict = {}
     for x in chromatic.getNotes():
-        for type in ["Major", "Altered","Harmonic Minor"]: 
-            if type == "Major":
+        for scaleType in ["Major", "Altered","Harmonic Minor","Harmonic Major"]:
+            if scaleType == "Major":
                 thisScale = [(note + x)%12 for note in cMajor.getNotes()]
-            if type == "Altered":
+            if scaleType == "Altered":
                 thisScale = [(note + x)%12 for note in cAltered.getNotes()]
-            if type == "Harmonic Minor":
-                thisScale = [(note + x)%12 for note in cHarmonic.getNotes()]
-            asymmetricJazzScalesDict[(noteDict[x],type)] = thisScale
+            if scaleType == "Harmonic Minor":
+                thisScale = [(note + x) % 12 for note in cHarmonicMinor.getNotes()]
+            elif scaleType == "Harmonic Major":
+                thisScale = [(note + x) % 12 for note in cHarmonicMajor.getNotes()]
+            asymmetricJazzScalesDict[(noteDict[x],scaleType)] = thisScale
     return asymmetricJazzScalesDict
 
 def getSymmetricJazzScales():
@@ -162,7 +166,7 @@ orderedEnergies = sorted(filtered, key=itemgetter(2))
 #print allScales
 
 # all scales that start with C (no loss of generality)
-allCScales = {k: allScales[k] for k in (('C natural','Altered'),('C natural','Harmonic Minor'),('C','Wholetone'),('C natural','Major'),('C','Augmented'),('C','Octatonic')) }
+allCScales = {k: allScales[k] for k in (('C natural','Altered'),('C natural','Harmonic Minor'),('C natural','Harmonic Major'),('C','Wholetone'),('C natural','Major'),('C','Augmented'),('C','Octatonic')) }
 #print allCScales
 #print len(allScales)
 
