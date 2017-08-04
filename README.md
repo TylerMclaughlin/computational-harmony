@@ -1,2 +1,4 @@
 # computational-harmony
-mathematical tools for choosing and studying chords and scales to aid the composer, jazz musician, producer, and scientist
+
+
+Mathematical tools for studying musical scales and chords to benefit the composer, jazz musician, producer, and scientist
