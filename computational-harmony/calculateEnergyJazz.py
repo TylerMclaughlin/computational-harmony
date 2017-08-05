@@ -31,16 +31,13 @@ class Scale(object):
     def getType(self):
         return (self.type)
 
-    def getNotes(self):
-        return self.notes
-
     def getName(self):
         name = self.root + " " + self.type
         return name
 
     def testScale(self):
         message1 = "test scale is " + self.getName()
-        message2 = " with notes " + str(self.getNotes())
+        message2 = " with notes " + str(self.notes)
         print message1 + message2
 
 
@@ -89,16 +86,16 @@ def getAsymmetricJazzScales():
     :return:
     """
     asymmetricJazzScalesDict = {}
-    for x in CHROMATIC.getNotes():
+    for x in CHROMATIC.notes:
         for scaleType in ["Major", "Altered", "Harmonic Minor", "Harmonic Major"]:
             if scaleType == "Major":
-                thisScale = [(note + x) % 12 for note in C_MAJOR.getNotes()]
+                thisScale = [(note + x) % 12 for note in C_MAJOR.notes]
             if scaleType == "Altered":
-                thisScale = [(note + x) % 12 for note in C_ALTERED.getNotes()]
+                thisScale = [(note + x) % 12 for note in C_ALTERED.notes]
             if scaleType == "Harmonic Minor":
-                thisScale = [(note + x) % 12 for note in C_HARMONIC_MINOR.getNotes()]
+                thisScale = [(note + x) % 12 for note in C_HARMONIC_MINOR.notes]
             elif scaleType == "Harmonic Major":
-                thisScale = [(note + x) % 12 for note in C_HARMONIC_MAJOR.getNotes()]
+                thisScale = [(note + x) % 12 for note in C_HARMONIC_MAJOR.notes]
             asymmetricJazzScalesDict[(NOTE_DICT[x], scaleType)] = thisScale
     return asymmetricJazzScalesDict
 
@@ -112,15 +109,15 @@ def getSymmetricJazzScales():
     for scale in [C_WHOLETONE, F_WHOLETONE, C_OCTATONIC, F_OCTATONIC, G_OCTATONIC, C_AUGMENTED, F_AUGMENTED, G_AUGMENTED,
                   BB_AUGMENTED]:
         # scale.testScale()
-        symmetricScalesDict[(scale.getRoot(), scale.getType())] = scale.getNotes()
+        symmetricScalesDict[(scale.getRoot(), scale.getType())] = scale.notes
     return symmetricScalesDict
 
 
 
 def getMajorScales():
     majorScalesDict = {}
-    for x in CHROMATIC.getNotes():
-        myTemp = [(asdf + x) % 12 for asdf in C_MAJOR.getNotes()]
+    for x in CHROMATIC.notes:
+        myTemp = [(asdf + x) % 12 for asdf in C_MAJOR.notes]
         majorScalesDict[NOTE_DICT[x]] = myTemp
     return majorScalesDict
 
@@ -150,16 +147,26 @@ def chordIntersection(chord1, chord2):
 
 # get all chords that start with C and are contained in another set of notes.
 # setOfPitches must lack 0.
-def makeAllChords(setOfPitches):
-    myPS = powerset(setOfPitches)
+def makeAllChords(setOfPitches = CHROMATIC.notes, rootNote = 'C'):
+
+
+    if isinstance(rootNote, str):
+        firstNote = NOTE_DICT.keys()[NOTE_DICT.values().index(rootNote)]
+    else:  # is an int
+        firstNote = rootNote
+    # make the set of all subsets missing the root
+    setMinusRoot = set(setOfPitches) - set([firstNote])
+    myPS = powerset(setMinusRoot)
     # print myPS
+
     listOfChords = []
     for listX in myPS:
-        listX.append(0)
+        listX.append(firstNote)
         listX = list(set(listX))  # remove duplicates
         listX.sort()
         # print listX
         listOfChords.append(listX)
+
     return listOfChords
 
 
@@ -204,11 +211,7 @@ def main():
     # print energy(Cmin7,allScales)
     # print energy([0,4,7,11],allScales)
 
-    # print chordIntersection([0,4,7,11],[4,8,11,3])
-
-    # used for making all chords
-    chromaticNoC = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    allChords = makeAllChords(chromaticNoC)
+    allChords = makeAllChords()
 
     energyListOfLists = [0] * len(allChords)
     i = 0
