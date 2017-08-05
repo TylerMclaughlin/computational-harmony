@@ -1,15 +1,23 @@
+## TO DO:
+## 1) make all chords for a given root (not just C)
+## 2) implement multiple key names per dictionary (may be over-optimization)
+## 3) be able to traverse network
+## 4) build contact matrix with all scales x all scales
+## 5) see if numbers ever contradict... they shouldn't
+####### i.e., make sure only change are None -> int J and not (int J -> int K != J)
+
 #import itertools as it
 
 from operator import itemgetter
 
 
-class Scale:
+class Scale(object):
     """
     Represents a single scale, which is defined as a collection of pitch classes.
     root: string
     type: string
     notes: list of ints; each int should be between 0 and 11.
-    >>> myScale = Scale('E flat', 'Major Pentatonic',[0,2,4,7,9])
+    >>> myScale = Scale('E flat', 'Major Pentatonic',[3,5,7,10,0])
     """
 
     def __init__(self, root, type, notes):
@@ -65,8 +73,8 @@ CHROMATIC = Scale("C", "Chromatic", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
 def getNoteDictionary():
     noteDict = {}
     for i, v in enumerate(
-            ['C natural', 'C sharp', 'D natural', 'E flat', 'E natural', 'F natural', 'F sharp', 'G natural', 'G sharp',
-             'A natural', 'B flat', 'B natural']):
+            ['C', 'C sharp', 'D', 'E flat', 'E', 'F', 'F sharp', 'G', 'G sharp',
+             'A', 'B flat', 'B']):
         noteDict[i] = v
 
     return noteDict
@@ -96,6 +104,10 @@ def getAsymmetricJazzScales():
 
 
 def getSymmetricJazzScales():
+    """
+
+    :return:
+    """
     symmetricScalesDict = {}
     for scale in [C_WHOLETONE, F_WHOLETONE, C_OCTATONIC, F_OCTATONIC, G_OCTATONIC, C_AUGMENTED, F_AUGMENTED, G_AUGMENTED,
                   BB_AUGMENTED]:
@@ -223,8 +235,8 @@ def main():
 
     # all scales that start with C (no loss of generality)
     allCScales = {k: allScales[k] for k in (
-        ('C natural', 'Altered'), ('C natural', 'Harmonic Minor'), ('C natural', 'Harmonic Major'), ('C', 'Wholetone'),
-        ('C natural', 'Major'), ('C', 'Augmented'), ('C', 'Octatonic'))}
+        ('C', 'Altered'), ('C', 'Harmonic Minor'), ('C', 'Harmonic Major'), ('C', 'Wholetone'),
+        ('C', 'Major'), ('C', 'Augmented'), ('C', 'Octatonic'))}
 
 
     # print allCScales
