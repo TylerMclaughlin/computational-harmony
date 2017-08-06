@@ -13,6 +13,7 @@
 
 #import itertools as it
 
+import csv
 from operator import itemgetter
 
 
@@ -160,6 +161,7 @@ def getAllScales():
 
     return allScales
 
+ALL_JAZZ_SCALES = getAllScales()
 
 
 def getMajorScales():
@@ -321,11 +323,91 @@ def allScalesGivenRoot(scale_root):
     return all_rooted_scales
 
 
+def printLOL(list_of_lists,min_common_tones = 0):
+    for i in range(len(list_of_lists)):
+        if list_of_lists[i][3] >= min_common_tones:
+            print list_of_lists[i]
+
+def nextScaleAsDict(scales_list):
+    """
+    will take one list from list of lists result and convert it to a dict
+    :param scales_list:  list.  First element is scale tuple.  Second element is Scale tuple.
+    Third element is list of notes, last element is number of common tones.
+    :return: Simple Dict with one key/value pair.
+    """
+    scale_dict = {}
+    scale_dict[scales_list[1]] = ALL_JAZZ_SCALES[scales_list[1]]
+    return scale_dict
+
+def appendUniquePairs(running_list,list_of_lists):
+    for i in list_of_lists:
+        current_pair = (i[0],i[1])
+        running_list.append(current_pair)
+
+
+def pairIsNew(running_list,list_from_lol):
+    curr_tuple = (list_from_lol[0],list_from_lol[1])
+    if  curr_tuple in set(running_list):
+        return False
+    else:
+        return True
+
+def testFullCovering(unique_pairs):
+    """
+    Makes sure
+    :param unique_pairs: list of tuples of tuples.  first variable output by recursive function below
+    :return:
+    """
+    all_lol = scalesOrderedByOverlap(ALL_JAZZ_SCALES, ALL_JAZZ_SCALES)
+    lal = len(all_lol)
+    count = lal
+    for list in all_lol:
+        if (list[0],list[1]) not in unique_pairs:
+            count -= 1
+            print (list[0],list[1])
+    print "total graph coverage is " + str(count / float(lal) * 100) + "%"
+
+
+
+
+def recursivelyExploreScaleSpace(starting_scale, allScales, depth, min_common_tones, unique_pairs,output):
+    """
+
+    :param starting_scale: scale dict
+    :param allScales:  scale dict (all scales you want to consider in exploration)
+    :param depth: int.   number of searches
+    :param unique_pairs = [].  list of unique pairs of jazz scales.  Avoids redundant recursion.
+    :param output = []
+    :return: None
+    """
+
+    current_nbhd = scalesOrderedByOverlap(starting_scale,allScales) # list of lists, "scale neighborhood"
+    current_nbhd = [x for x in current_nbhd if x[3] >= min_common_tones]
+    #printLOL(current_nbhd)
+    #print "unique pairs ", unique_pairs
+    #print "depth ", depth
+    if depth != 0:                  # stops recursion when depth gets to 0
+        #print len(current_nbhd)
+        for neighboring_scale in current_nbhd:
+            if neighboring_scale[3] >= min_common_tones:
+                #print "sufficient common tones"
+                if pairIsNew(unique_pairs,neighboring_scale):    # make sure we only explore new edges
+                    output.append(neighboring_scale)
+                    ###print neighboring_scale
+                    #print "and pair is new"
+                    unique_pairs.append((neighboring_scale[0],neighboring_scale[1]))  # add all scale-scale edges to current_nbhd
+                    ns_dict = nextScaleAsDict(neighboring_scale)
+                    recursivelyExploreScaleSpace(ns_dict, allScales, depth-1, min_common_tones,unique_pairs,output)
+                #else:
+                    #print "but pair is NOT new"
+    return unique_pairs, output
+
+
+
 def main():
 
-    allJazzScales = getAllScales()
 
-    # print allJazzScales
+
     majorScales = getMajorScales()
 
 
@@ -340,7 +422,7 @@ def main():
     energyListOfLists = [0] * len(allChords)
     i = 0
     for chord in allChords:
-        myEnergy, myKeyList = energy(chord, allJazzScales)
+        myEnergy, myKeyList = energy(chord, ALL_JAZZ_SCALES)
         myProduct = myEnergy * len(chord)
         energyListOfLists[i] = [chord, myEnergy, myProduct, myKeyList]
         i = i + 1
@@ -357,25 +439,26 @@ def main():
     # for i in range(len(orderedEnergies)):
     #   print orderedEnergies[i]
 
-    # print allScales
+
+    # let's see a glimpse of the local topology, starting at scales that start with C
+    # all scales with C as a root
+    allCScales = allScalesGivenRoot('C')
+    ordered_c_scales_overlap = scalesOrderedByOverlap(allCScales, ALL_JAZZ_SCALES)
+    #printLOL(ordered_c_scales_overlap)
+    a,b = recursivelyExploreScaleSpace(C_MAJOR.asDict(), getMajorScales(), depth=5, min_common_tones=1, unique_pairs=[],output = [])
 
 
-    # all scales that start with C (no loss of generality)
-    allCScales = {k: allScales[k] for k in (
-        ('C', 'Altered'), ('C', 'Harmonic Minor'), ('C', 'Harmonic Major'), ('C', 'Wholetone'),
-        ('C', 'Major'), ('C', 'Augmented'), ('C', 'Octatonic'))}
+    c, d = recursivelyExploreScaleSpace(C_MAJOR.asDict(), ALL_JAZZ_SCALES, depth=7, min_common_tones=1,
+                                        unique_pairs=[], output=[])
+    testFullCovering(c)
 
+    with open('edgetable.csv','wb') as csvfile:
+        my_writer = csv.writer(csvfile,delimiter=',')
+        for row in d:
+            row_0 = ' '.join(map(str, row[0]))
+            row_1 = ' '.join(map(str, row[1]))
+            my_writer.writerow([row_0,row_1,row[3],row[2]])
 
-    # print allCScales
-    # print len(allScales)
-
-    orderedOverlap = scalesOrderedByOverlap(allCScales, allJazzScales)
-
-
-
-    for i in range(len(orderedOverlap)):
-        print orderedOverlap[i]
-    ## Then pipe this into text file.
 
 if __name__ == '__main__':
     main()
