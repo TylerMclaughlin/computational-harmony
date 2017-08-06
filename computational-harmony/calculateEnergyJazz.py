@@ -40,6 +40,15 @@ class Scale(object):
         name = self.root + " " + self.type
         return name
 
+    def getTupleName(self):
+        tuple_name = (self.root, self.type)
+        return tuple_name
+
+    def asDict(self):
+        output_dict = {}
+        output_dict[self.getTupleName()] = self.notes
+        return output_dict
+
     def testScale(self):
         message1 = "test scale is " + self.getName()
         message2 = " with notes " + str(self.notes)
@@ -63,7 +72,7 @@ F_WHOLETONE = Scale("F", "Wholetone", [1, 3, 5, 7, 9, 11])
 C_AUGMENTED = Scale("C", "Augmented", [0, 3, 4, 7, 8, 11])
 F_AUGMENTED = Scale("F", "Augmented", [0, 1, 4, 5, 8, 9])
 G_AUGMENTED = Scale("G", "Augmented", [2, 3, 6, 7, 10, 11])
-BB_AUGMENTED = Scale("Bb", "Augmented", [1, 2, 5, 6, 9, 10])
+BB_AUGMENTED = Scale("B flat", "Augmented", [1, 2, 5, 6, 9, 10])
 
 # three unique octatonic scales (a.k.a. half/whole diminished scale)
 C_OCTATONIC = Scale("C", "Octatonic", [0, 1, 3, 4, 6, 7, 9, 10])
@@ -91,6 +100,18 @@ REVERSE_NOTE_DICT = { 'C':0,'C natural':0,'B sharp':0, 'B#':0,'C sharp':1, 'D fl
                 'F sharp':6, 'G flat':6, 'F#':6,'Gb':6,'G':7,'G natural':7,'G sharp':8,'A flat':8,'G#':8,'Ab':8,
                 'A':9,'A natural':9,'B flat':10,'A sharp':10, 'Bb':10,'A#':10,
                 'B':11,'B natural':11,'C flat':11, 'Cb':11}
+
+def convertToCanonicalName(note_name):
+    """
+
+    :param note_name: string
+    :return:  string
+     >>> convertToCanonicalName('G flat')
+     Out: 'F sharp'
+    """
+    pitch_int = REVERSE_NOTE_DICT[note_name]
+
+    return NOTE_DICT[pitch_int]
 
 
 
@@ -127,6 +148,17 @@ def getSymmetricJazzScales():
         # scale.testScale()
         symmetricScalesDict[(scale.getRoot(), scale.getType())] = scale.notes
     return symmetricScalesDict
+
+def getAllScales():
+    """
+
+    :return: scale dict
+    """
+    allScales = getAsymmetricJazzScales()
+    symScales = getSymmetricJazzScales()
+    allScales.update(symScales)
+
+    return allScales
 
 
 
@@ -250,15 +282,50 @@ def scalesOrderedByOverlap(scaleDict1, scaleDict2):
     return orderedIntersection
 
 
+def allScalesGivenRoot(scale_root):
+    """
+
+    :param scale_root: string
+    :return: scale dict
+    """
+
+    scale_root = convertToCanonicalName(scale_root)
+
+    # first add all asymmetric scales
+    allScales = getAllScales()
+    all_rooted_scales = {k: allScales[k] for k in ( (scale_root, 'Major'),(scale_root, 'Altered'), (scale_root, 'Harmonic Minor'), (scale_root, 'Harmonic Major') )}
+    pitch_int = REVERSE_NOTE_DICT[scale_root] # integer of the scale_root
+    # augmented scales
+    if pitch_int % 4 == 0:
+        all_rooted_scales.update(C_AUGMENTED.asDict())
+    elif pitch_int % 4 == 1:
+        all_rooted_scales.update(F_AUGMENTED.asDict())
+    elif pitch_int % 4 == 2:
+        all_rooted_scales.update(BB_AUGMENTED.asDict())
+    else:
+        all_rooted_scales.update(G_AUGMENTED.asDict())
+    # octatonic scales
+    if pitch_int % 3 == 0:
+        all_rooted_scales.update(C_OCTATONIC.asDict())
+    elif pitch_int % 3 == 1:
+        all_rooted_scales.update(G_OCTATONIC.asDict())
+    else:
+        all_rooted_scales.update(F_OCTATONIC.asDict())
+    # whole tone scales
+    if pitch_int % 2 == 0:
+        all_rooted_scales.update(C_WHOLETONE.asDict())
+    else:
+        all_rooted_scales.update(F_WHOLETONE.asDict())
+
+
+    return all_rooted_scales
 
 
 def main():
 
-    allScales = getAsymmetricJazzScales()
-    symScales = getSymmetricJazzScales()
-    allScales.update(symScales)
+    allJazzScales = getAllScales()
 
-    # print allScales
+    # print allJazzScales
     majorScales = getMajorScales()
 
 
@@ -266,15 +333,14 @@ def main():
     # print energy(Cmin7,allScales)
     # print energy([0,4,7,11],allScales)
 
-    #allChords = makeAllChords()
 
     allChords = makeAllChords(rootNote = 0)
-    print allChords
+
 
     energyListOfLists = [0] * len(allChords)
     i = 0
     for chord in allChords:
-        myEnergy, myKeyList = energy(chord, allScales)
+        myEnergy, myKeyList = energy(chord, allJazzScales)
         myProduct = myEnergy * len(chord)
         energyListOfLists[i] = [chord, myEnergy, myProduct, myKeyList]
         i = i + 1
@@ -303,7 +369,7 @@ def main():
     # print allCScales
     # print len(allScales)
 
-    orderedOverlap = scalesOrderedByOverlap(allCScales, allScales)
+    orderedOverlap = scalesOrderedByOverlap(allCScales, allJazzScales)
 
 
 
