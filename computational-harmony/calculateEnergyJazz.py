@@ -5,6 +5,11 @@
 ## 4) build contact matrix with all scales x all scales
 ## 5) see if numbers ever contradict... they shouldn't
 ####### i.e., make sure only change are None -> int J and not (int J -> int K != J)
+## 6) print which scale degree (3rd, 4th, 9th, 11th, etc) ?
+## 7) make scale dict class?
+## 8) come up with class that identifies multiple names to single canonical name
+###### i.e., accept 'Bb' and 'A sharp' and 'B flat', but always map to 'B flat'
+## 9) make more scale functions with self and other, like find common tones.
 
 #import itertools as it
 
@@ -67,7 +72,7 @@ G_OCTATONIC = Scale("G", "Octatonic", [1, 2, 4, 5, 7, 8, 10, 11])
 
 CHROMATIC = Scale("C", "Chromatic", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
 
-def getNoteDictionary():
+def getCanonicalNoteDictionary():
     noteDict = {}
     for i, v in enumerate(
             ['C', 'C sharp', 'D', 'E flat', 'E', 'F', 'F sharp', 'G', 'G sharp',
@@ -76,14 +81,25 @@ def getNoteDictionary():
 
     return noteDict
 
-NOTE_DICT = getNoteDictionary()
+
+NOTE_DICT = getCanonicalNoteDictionary()
+
+# allow for multiple enharmonic equivalents pointing to same integer
+REVERSE_NOTE_DICT = { 'C':0,'C natural':0,'B sharp':0, 'B#':0,'C sharp':1, 'D flat':1, 'C#':1,'Db':1,
+                'D':2,'D natural':2,'E flat':3,'D sharp':3,'Eb':3,'D#':3,
+                'E natural':4,'F flat':4, 'Fb':4,'F':5,'F natural':5,'E sharp':5, 'E#':5,
+                'F sharp':6, 'G flat':6, 'F#':6,'Gb':6,'G':7,'G natural':7,'G sharp':8,'A flat':8,'G#':8,'Ab':8,
+                'A':9,'A natural':9,'B flat':10,'A sharp':10, 'Bb':10,'A#':10,
+                'B':11,'B natural':11,'C flat':11, 'Cb':11}
+
 
 
 def getAsymmetricJazzScales():
     """
+    use scales with c as root  (e.g., C_ALTERED and C_MAJOR)to generate all other scales
+    with different roots via transposition
 
-    scaleType can be thought of as generators for all transpositions of scaleType
-    :return:
+    :return: scale dict
     """
     asymmetricJazzScalesDict = {}
     for x in CHROMATIC.notes:
@@ -103,7 +119,7 @@ def getAsymmetricJazzScales():
 def getSymmetricJazzScales():
     """
 
-    :return:
+    :return: scale dict
     """
     symmetricScalesDict = {}
     for scale in [C_WHOLETONE, F_WHOLETONE, C_OCTATONIC, F_OCTATONIC, G_OCTATONIC, C_AUGMENTED, F_AUGMENTED, G_AUGMENTED,
@@ -115,27 +131,56 @@ def getSymmetricJazzScales():
 
 
 def getMajorScales():
+    """
+
+    :return:  scale dict
+    """
     majorScalesDict = {}
     for x in CHROMATIC.notes:
         myTemp = [(asdf + x) % 12 for asdf in C_MAJOR.notes]
-        majorScalesDict[NOTE_DICT[x]] = myTemp
+        majorScalesDict[(NOTE_DICT[x],C_MAJOR.type)] = myTemp
     return majorScalesDict
 
+def getAlteredScales():
+    """
 
+    :return: scale dict
+    """
+    alteredScalesDict = {}
+    for x in CHROMATIC.notes:
+        myTemp = [(asdf + x) % 12 for asdf in C_ALTERED.notes]
+        alteredScalesDict[(NOTE_DICT[x],C_ALTERED.type)] = myTemp
+    return alteredScalesDict
 
 
 
 def energy(chord, myScalesDict):
+    """
+    Determine how many scales a chord can belong to.
+    This is the "energy" or "entropy"
+    :param chord:  list of ints
+    :param myScalesDict:  a scales dict
+    :return: tuple of int, list of scales
+    >>> myEnergy = energy([0,4,7], getAlteredScales())
+    """
+
     counter = 0
     keyList = []
     for key in myScalesDict:
         if set(myScalesDict[key]) & set(chord) == set(chord):
-            # print key
             keyList.append(key)
             counter += 1
 
     return counter, keyList
 
+
+def chordListToScaleDict(listOfChords):
+    chordDict = {}
+
+    for i in range(0,len(listOfChords)):
+        chordDict['scale' + str(i)] = listOfChords[i]
+
+    return chordDict
 
 
 def chordIntersection(chord1, chord2):
@@ -143,15 +188,16 @@ def chordIntersection(chord1, chord2):
 
 
 
-
-
-# get all chords that start with C and are contained in another set of notes.
-# setOfPitches must lack 0.
 def makeAllChords(setOfPitches = CHROMATIC.notes, rootNote = 'C'):
+    """
 
+    :param setOfPitches: list.  Building blocks for chords
+    :param rootNote:  str or int.  Root note will be present in all derived chords
+    :return:
+    """
 
     if isinstance(rootNote, str):
-        firstNote = NOTE_DICT.keys()[NOTE_DICT.values().index(rootNote)]
+        firstNote = REVERSE_NOTE_DICT[rootNote]
     else:  # is an int
         firstNote = rootNote
     # make the set of all subsets missing the root
@@ -164,20 +210,29 @@ def makeAllChords(setOfPitches = CHROMATIC.notes, rootNote = 'C'):
         listX.append(firstNote)
         listX = list(set(listX))  # remove duplicates
         listX.sort()
-        # print listX
         listOfChords.append(listX)
 
     return listOfChords
 
 
 def powerset(myList):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    """"
+    powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
+    """
     return reduce(lambda result, x: result + [subset + [x] for subset in result], myList, [[]])
 
 
 
 
 def scalesOrderedByOverlap(scaleDict1, scaleDict2):
+    """
+
+    :param scaleDict1:
+    :param scaleDict2:
+    :return: list .  First elements is scale i.  second is scale j.  Third element is list of common tones.
+    Fourth element is number of common tones
+    >>> myOrderedScales = scalesOrderedByOverlap(getAlteredScales(),getMajorScales())
+    """
     intersectionListOfLists = [0] * (len(scaleDict1) * len(scaleDict2))
     i = 0
     for scale1 in scaleDict1:
@@ -190,6 +245,7 @@ def scalesOrderedByOverlap(scaleDict1, scaleDict2):
             else:
                 intersectionListOfLists[i] = ["Duplicate", "Duplicate", [0], 0]
             i = i + 1
+    # sort by column number 3
     orderedIntersection = sorted(intersectionListOfLists, key=itemgetter(3))
     return orderedIntersection
 
@@ -200,18 +256,20 @@ def main():
 
     allScales = getAsymmetricJazzScales()
     symScales = getSymmetricJazzScales()
-    # print symScales
     allScales.update(symScales)
 
     # print allScales
     majorScales = getMajorScales()
 
-    Cmin7 = [0, 3, 7, 10]
 
+    #Cmin7 = [0, 3, 7, 10]
     # print energy(Cmin7,allScales)
     # print energy([0,4,7,11],allScales)
 
-    allChords = makeAllChords()
+    #allChords = makeAllChords()
+
+    allChords = makeAllChords(rootNote = 0)
+    print allChords
 
     energyListOfLists = [0] * len(allChords)
     i = 0
