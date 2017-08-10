@@ -1,8 +1,8 @@
 ## TO DO:
-## 1) make all chords for a given root (not just C)
-## 2) implement multiple key names per dictionary (may be over-optimization)
-## 3) be able to traverse network
-## 4) build contact matrix with all scales x all scales
+## 1) make all chords for a given root (not just C)  DONE
+## 2) implement multiple key names per dictionary (may be over-optimization)  DONE
+## 3) be able to recursively traverse network  DONE
+## 4) build contact matrix with all scales x all scales  DONE
 ## 5) see if numbers ever contradict... they shouldn't
 ####### i.e., make sure only change are None -> int J and not (int J -> int K != J)
 ## 6) print which scale degree (3rd, 4th, 9th, 11th, etc) ?
@@ -10,6 +10,9 @@
 ## 8) come up with class that identifies multiple names to single canonical name
 ###### i.e., accept 'Bb' and 'A sharp' and 'B flat', but always map to 'B flat'
 ## 9) make more scale functions with self and other, like find common tones.
+## 10)  Incorporate scale type into exported CSV
+
+
 
 #import itertools as it
 
@@ -165,8 +168,7 @@ ALL_JAZZ_SCALES = getAllScales()
 
 
 def getMajorScales():
-    """
-
+    """returns a dictionary of scales, with one key for every major scale
     :return:  scale dict
     """
     majorScalesDict = {}
@@ -189,8 +191,7 @@ def getAlteredScales():
 
 
 def energy(chord, myScalesDict):
-    """
-    Determine how many scales a chord can belong to.
+    """Determine how many scales a chord can belong to.
     This is the "energy" or "entropy"
     :param chord:  list of ints
     :param myScalesDict:  a scales dict
@@ -354,9 +355,9 @@ def pairIsNew(running_list,list_from_lol):
 
 def testFullCovering(unique_pairs):
     """
-    Makes sure
+    Looks to see if all scales have been incorporated into the network.
     :param unique_pairs: list of tuples of tuples.  first variable output by recursive function below
-    :return:
+    Prints the percent coverage of the network.
     """
     all_lol = scalesOrderedByOverlap(ALL_JAZZ_SCALES, ALL_JAZZ_SCALES)
     lal = len(all_lol)
@@ -455,9 +456,13 @@ def main():
     with open('edgetable.csv','wb') as csvfile:
         my_writer = csv.writer(csvfile,delimiter=',')
         for row in d:
-            row_0 = ' '.join(map(str, row[0]))
-            row_1 = ' '.join(map(str, row[1]))
-            my_writer.writerow([row_0,row_1,row[3],row[2]])
+            from_name = ' '.join(map(str, row[0]))
+            to_name = ' '.join(map(str, row[1]))
+            from_root = row[0][0]
+            from_scale_type = row[0][1]
+            to_root = row[1][0]
+            to_scale_type = row[1][1]
+            my_writer.writerow([from_name,to_name,row[3],row[2],from_root,from_scale_type,to_root,to_scale_type])
 
 
 if __name__ == '__main__':
