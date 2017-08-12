@@ -28,3 +28,54 @@ A graph is planar if it can be drawn in the plane.  (reference Richard Trudeau)
 One can easily see that the graph of Major scales plus altered scales is planar.
 
 Addition of the set of Harmonic major scales violates planarity.
+
+
+# notes on network
+
+Euler's second formula:  If G is a connected graph then v - e + f = 2 - 2*g
+
+theorem 21 (Trudeau text):  If G is connected with v >= 3 and genus g then
+
+g >= (1/6)*e - (1/2)(v-2)
+
+For the <b>full</b> jazz scale network of the 57 unique scales, the number of edges  e =  (57 * 57  - 2 - 4) / 2 - 57.
+
+Matrix picture here.
+
+We are subtracting 57 because we want to exclude self-interactions, like C Major to C Major.  We subtract 2 because we wish to discard C wholetone -> F wholetone and its reverse, F wholetone -> C wholetone.  Distinct wholetone scales do not have common tones.  Subtracting 4 because there are two pairs of augmented scales with no common tones:  C augmented <-> B flat augmented and F augmented <-> G augmented.  Lastly, we divide the first term by two to consider only half of the off-diagonal matrix.  
+
+inspecting the number of rows in the data.table in R yields 3186 rows. This is derived from 57 * 57 - 57 - 4 - 2.
+
+Divide by two to get 1593 edges.
+
+g >= 1593/6 - 55/2 = 238.  The genus of the graph is at least 238.  238 tori glued together.  It could potentially be a lot larger.
+
+Let's consider the network of neighboring scales.
+
+els.2[distance>5] 
+>>> 288
+
+There are no diagonal elements, so we are safe to divide this by two to get the number of edges, e = 144.
+
+Applying the theorem, with e = 144 and v = 57,
+
+g >= 1/6*(144) - (1/2)*(v-2) = -3.5.
+
+We know from inspection, that the genus is > 0, so this formula does not help.
+
+If we extend the to network to include edges that share 5 or 6 common tones, we have e = 468 (treating edges the same, ignoring the difference in common tones).  v does not change, yielding g >= 1/6*468 - 1/2*(57-2) = 50.5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
