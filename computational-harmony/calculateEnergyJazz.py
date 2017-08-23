@@ -431,11 +431,9 @@ def main():
     orderedEnergies = sorted(filtered, key=itemgetter(2))
 
     # test energy calculation
-    # for i in range(len(orderedEnergies)):
-    #   print orderedEnergies[i]
+    # printLOL(orderedEnergies)
 
-
-    # let's see a glimpse of the local topology, starting at scales that start with C
+    # let's take a glimpse of the local topology, starting at scales that start with C
     # all scales with C as a root
     allCScales = allScalesGivenRoot('C')
     ordered_c_scales_overlap = scalesOrderedByOverlap(allCScales, ALL_JAZZ_SCALES)
