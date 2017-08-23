@@ -209,11 +209,11 @@ def energy(chord, myScalesDict):
     return counter, keyList
 
 
-def chordListToScaleDict(listOfChords):
+def chordListToScaleDict(list_of_chords):
     chordDict = {}
 
-    for i in range(0,len(listOfChords)):
-        chordDict['scale' + str(i)] = listOfChords[i]
+    for i in range(0, len(list_of_chords)):
+        chordDict['scale' + str(i)] = list_of_chords[i]
 
     return chordDict
 
@@ -240,14 +240,14 @@ def makeAllChords(setOfPitches = CHROMATIC.notes, rootNote = 'C'):
     myPS = powerset(setMinusRoot)
     # print myPS
 
-    listOfChords = []
+    list_of_chords = []
     for listX in myPS:
         listX.append(firstNote)
         listX = list(set(listX))  # remove duplicates
         listX.sort()
-        listOfChords.append(listX)
+        list_of_chords.append(listX)
 
-    return listOfChords
+    return list_of_chords
 
 
 def powerset(myList):
@@ -268,7 +268,7 @@ def scalesOrderedByOverlap(scaleDict1, scaleDict2):
     Fourth element is number of common tones
     >>> myOrderedScales = scalesOrderedByOverlap(getAlteredScales(),getMajorScales())
     """
-    intersectionListOfLists = [0] * (len(scaleDict1) * len(scaleDict2))
+    intersection_list_of_lists = [0] * (len(scaleDict1) * len(scaleDict2))
     i = 0
     for scale1 in scaleDict1:
         for scale2 in scaleDict2:
@@ -276,12 +276,12 @@ def scalesOrderedByOverlap(scaleDict1, scaleDict2):
                 currScale1 = scaleDict1[scale1]
                 currScale2 = scaleDict2[scale2]
                 overlap = chordIntersection(currScale1, currScale2)
-                intersectionListOfLists[i] = [scale1, scale2, overlap, len(overlap)]
+                intersection_list_of_lists[i] = [scale1, scale2, overlap, len(overlap)]
             else:
-                intersectionListOfLists[i] = ["Duplicate", "Duplicate", [0], 0]
+                intersection_list_of_lists[i] = ["Duplicate", "Duplicate", [0], 0]
             i = i + 1
     # sort by column number 3
-    orderedIntersection = sorted(intersectionListOfLists, key=itemgetter(3))
+    orderedIntersection = sorted(intersection_list_of_lists, key=itemgetter(3))
     return orderedIntersection
 
 
@@ -407,33 +407,27 @@ def recursivelyExploreScaleSpace(starting_scale, allScales, depth, min_common_to
 
 def main():
 
-
-
     majorScales = getMajorScales()
-
 
     #Cmin7 = [0, 3, 7, 10]
     # print energy(Cmin7,allScales)
-    # print energy([0,4,7,11],allScales)
-
 
     allChords = makeAllChords(rootNote = 0)
 
-
-    energyListOfLists = [0] * len(allChords)
+    energy_list_of_lists = [0] * len(allChords)
     i = 0
     for chord in allChords:
         myEnergy, myKeyList = energy(chord, ALL_JAZZ_SCALES)
         myProduct = myEnergy * len(chord)
-        energyListOfLists[i] = [chord, myEnergy, myProduct, myKeyList]
+        energy_list_of_lists[i] = [chord, myEnergy, myProduct, myKeyList]
         i = i + 1
 
-    filtered = energyListOfLists[:]
-    for l in energyListOfLists:
+    filtered = energy_list_of_lists[:]
+    for l in energy_list_of_lists:
         if len(l[0]) < 4:
             filtered.remove(l)
 
-    # orderedEnergies = sorted(energyListOfLists, key=itemgetter(2))
+    # orderedEnergies = sorted(energy_list_of_lists, key=itemgetter(2))
     orderedEnergies = sorted(filtered, key=itemgetter(2))
 
     # test energy calculation
