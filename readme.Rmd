@@ -1,13 +1,85 @@
 ---
-title: "Topological Graph Theory of Jazz Scales"
+title: "Towards a Topological Graph Theory of Jazz Scales"
 author: "R Tyler McLaughlin"
 date: "8/22/2017"
-output: html_document 
+output: github_document 
 code_folding: hide
+bibliography: bibliography.bibtex
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,cache=TRUE)
+```
+## Table of Contents
+
+# Table of Contents
+1. [Motivation](#example)
+2. [Data wrangling in R](#example2)
+3. [The Jazz Scale Network Adjacency Matrix](#example3)
+3. [Python classes and functions for studying musical scales](#example4)
+4. [Method for Building Network of Jazz Scales](#example5)
+
+
+## Motivation
+asdf
+
+
+
+
+## R Libraries
+
+```{r lib, echo = TRUE}
+library(ggplot2)
+library(data.table)
+```
+
+## Importing the Edge Table Data
+ TO DO:  fix python code to write header. so I don't have to do this in R.
+
+```{r imp, echo = TRUE}
+edge_list_raw <- data.table(read.csv('../edgetable.csv',header = FALSE))
+setnames(edge_list_raw,'V1','from')
+setnames(edge_list_raw,'V2','to')
+setnames(edge_list_raw,'V3','distance')
+setnames(edge_list_raw,'V4','common.tones')
+setnames(edge_list_raw,'V5','from.root')
+setnames(edge_list_raw,'V6','from.scale.type')
+setnames(edge_list_raw,'V7','to.root')
+setnames(edge_list_raw,'V8','to.scale.type')
+```
+
+We see that the data is 3186 rows.  This means 3186 edges in the graph, which is equal to `r "57 * 57 - 57 - 2*(2 + 1) = 3186" ` 
+
+# Sorting the Edge List for Plotting
+
+We want to group all the scales by their type.  Within a scale type, we want to order the root notes in a way that makes sense.  Let's choose the circle of fifths because this will put neighboring major scales in proximity.  This will see what this looks like for the Altered scales, Harmonic Minor scales, etc. 
+
+```{r sorting, echo=TRUE}
+
+# safe way to copy a data.table
+els <- copy(edge_list_raw)
+# set the custom order of the levels of the scale types
+els$to.scale.type <- factor(els$to.scale.type,levels=c('Major','Altered','Harmonic Minor','Harmonic Major','Octatonic','Wholetone'))
+# set the order of the levels by circle of fifths
+els$to.root <- factor(els$to.root,levels=c('C','F','B flat','E flat','G sharp','C sharp','F sharp','B','E','A','D','G'))
+# do the same for the "from" levels;
+# these will be plotted on the y #axis
+els$from.scale.type <- factor(els$from.scale.type,levels=c('Major','Altered','Harmonic Minor','Harmonic Major','Octatonic','Wholetone'))
+els$from.root <- factor(els$from.root,levels=c('C','F','B flat','E flat','G sharp','C sharp','F sharp','B','E','A','D','G'))
+
+# order by levels.
+els <- els[order(els$to.scale.type,els$to.root)]
+els <- els[order(els$to.scale.type,els$to.root)]
+
+```
+
+# Plotting the Adjacency Matrix
+
+```{r plotting, echo = TRUE}
+plot <- ggplot(els) + geom_raster(aes(x=factor(from),y=factor(to),fill=factor(distance)))   
+plot + scale_x_discrete(limits=(els$from)[order(els$from.scale.type,els$from.root)]) + 
+  scale_y_discrete(limits=(els$to)[order(els$to.scale.type,els$to.root)]) +
+  theme(axis.text.x=element_text(angle=90)) + scale_fill_brewer()
 ```
 
 ## Python classes and functions for studying musical scales
@@ -80,58 +152,4 @@ Given C Major, to which scales can we modulate without sounding too avant garde 
 Instead of recursion, we could say, for each jazz scale, merely iterate over all other jazz scales and record the number of common tones.   This would be implemented with a much simpler nested for loop.  You could then sort afterwards.  This algorithm would be slightly more efficient (you wouldn't have to check to avoid repeating pairs of scales), but efficiency wasn't really an issue for such a small data set of 57 scales.
 
 
-## R Libraries
-
-```{r lib, echo = TRUE}
-library(ggplot2)
-library(data.table)
-```
-
-## Importing the Edge Table Data
- TO DO:  fix python code to write header. so I don't have to do this in R.
-
-```{r imp, echo = TRUE}
-edge_list_raw <- data.table(read.csv('../edgetable.csv',header = FALSE))
-setnames(edge_list_raw,'V1','from')
-setnames(edge_list_raw,'V2','to')
-setnames(edge_list_raw,'V3','distance')
-setnames(edge_list_raw,'V4','common.tones')
-setnames(edge_list_raw,'V5','from.root')
-setnames(edge_list_raw,'V6','from.scale.type')
-setnames(edge_list_raw,'V7','to.root')
-setnames(edge_list_raw,'V8','to.scale.type')
-```
-
-We see that the data is 3186 rows.  This means 3186 edges in the graph, which is equal to `r "57 * 57 - 57 - 2*(2 + 1) = 3186" ` 
-
-# Sorting the Edge List for Plotting
-
-We want to group all the scales by their type.  Within a scale type, we want to order the root notes in a way that makes sense.  Let's choose the circle of fifths because this will put neighboring major scales in proximity.  This will see what this looks like for the Altered scales, Harmonic Minor scales, etc. 
-
-```{r sorting, echo=TRUE}
-
-# safe way to copy a data.table
-els <- copy(edge_list_raw)
-# set the custom order of the levels of the scale types
-els$to.scale.type <- factor(els$to.scale.type,levels=c('Major','Altered','Harmonic Minor','Harmonic Major','Octatonic','Wholetone'))
-# set the order of the levels by circle of fifths
-els$to.root <- factor(els$to.root,levels=c('C','F','B flat','E flat','G sharp','C sharp','F sharp','B','E','A','D','G'))
-# do the same for the "from" levels;
-# these will be plotted on the y #axis
-els$from.scale.type <- factor(els$from.scale.type,levels=c('Major','Altered','Harmonic Minor','Harmonic Major','Octatonic','Wholetone'))
-els$from.root <- factor(els$from.root,levels=c('C','F','B flat','E flat','G sharp','C sharp','F sharp','B','E','A','D','G'))
-
-# order by levels.
-els <- els[order(els$to.scale.type,els$to.root)]
-els <- els[order(els$to.scale.type,els$to.root)]
-
-```
-
-# Plotting the Adjacency Matrix
-
-```{r plotting, echo = TRUE}
-plot <- ggplot(els) + geom_raster(aes(x=factor(from),y=factor(to),fill=factor(distance)))   
-plot + scale_x_discrete(limits=(els$from)[order(els$from.scale.type,els$from.root)]) + 
-  scale_y_discrete(limits=(els$to)[order(els$to.scale.type,els$to.root)]) +
-  theme(axis.text.x=element_text(angle=90))
-```
+# References
