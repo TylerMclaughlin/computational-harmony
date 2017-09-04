@@ -52,7 +52,7 @@ The combination of **high-dimensionality** and **circularity** suggests that an 
 
 ### Project Goals
 
-Tymoczko's work encouraged me to consider topological graph theory applied to the jazz scales that pervade jazz as a genre. His work is clearly more general than mine. **This project is about the manifold structure of the network of the most common jazz scales. **
+Tymoczko's work encouraged me to consider topological graph theory applied to the jazz scales that pervade jazz as a genre. His work is clearly more general than mine. **This project is about the manifold structure of the network of the most common jazz scales.**
 
 **Discovering the simplest 2-manifold in which the jazz scale network can be embedded is the primary goal of this study.** Can it be embedded on an orientable surface like a torus or triple torus? Must it instead be embedded on a Moebius strip-like object? Or does it have to be embedded on a Klein bottle?
 
