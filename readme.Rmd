@@ -10,9 +10,8 @@ bibliography: bibliography.bibtex
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,cache=TRUE)
 ```
-## Table of Contents
 
-# Table of Contents
+## Table of Contents
 1. [Motivation](#example)
 2. [Data wrangling in R](#example2)
 3. [The Jazz Scale Network Adjacency Matrix](#example3)
@@ -21,7 +20,10 @@ knitr::opts_chunk$set(echo = TRUE,cache=TRUE)
 
 
 ## Motivation
-asdf
+
+After reading about unsupervised machine learning algorithms, particularly manifold learning, I became very interested in the shapes of data.  I wanted to  Some reading, I learned how the feature space of natural images is embedded on a Klein bottle, the manifold that is locally 2-dimensional.   [@carlsson2008] 
+
+A published in *Science* voice-leading space, chords of N pitches exist on a  manifold that is the N-dimensional analog to the 1-D Moebius strip (cite Tymoczko).  To explain Chopin's 
 
 
 
@@ -37,7 +39,7 @@ library(data.table)
  TO DO:  fix python code to write header. so I don't have to do this in R.
 
 ```{r imp, echo = TRUE}
-edge_list_raw <- data.table(read.csv('../edgetable.csv',header = FALSE))
+edge_list_raw <- data.table(read.csv('./edgetable.csv',header = FALSE))
 setnames(edge_list_raw,'V1','from')
 setnames(edge_list_raw,'V2','to')
 setnames(edge_list_raw,'V3','distance')
