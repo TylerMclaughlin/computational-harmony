@@ -6,31 +6,30 @@ R Tyler McLaughlin
 Table of Contents
 -----------------
 
-1.  [Motivation](#example)
-2.  [Data wrangling in R](#example2)
-3.  [The Jazz Scale Network Adjacency Matrix](#example3)
-4.  [Python classes and functions for studying musical scales](#example4)
-5.  [Method for Building Network of Jazz Scales](#example5)
+1.  [Motivation](#motivation)
+2.  [Data wrangling in R](#wrangling)
+3.  [The Jazz Scale Network Adjacency Matrix](#matrix)
+4.  [Python classes and functions for studying musical scales](#classes)
+5.  [Method for Building Network of Jazz Scales](#method)
 
-Motivation
-----------
+Motivation<a name="motivation" />
+---------------------------------
 
 After reading about unsupervised machine learning algorithms, particularly manifold learning, I became very interested in the shapes of data. I wanted to Some reading, I learned how the feature space of natural images is embedded on a Klein bottle, the manifold that is locally 2-dimensional. (Carlsson et al. 2008)
 
 A published in *Science* voice-leading space, chords of N pitches exist on a manifold that is the N-dimensional analog to the 1-D Moebius strip (cite Tymoczko). To explain Chopin's
 
-R Libraries
------------
+Data Wrangling<a name="wrangling" />
+------------------------------------
+
+### R Libraries
 
 ``` r
 library(ggplot2)
 library(data.table)
 ```
 
-Importing the Edge Table Data
------------------------------
-
-TO DO: fix python code to write header. so I don't have to do this in R.
+### Importing the Edge Table Data
 
 ``` r
 edge_list_raw <- data.table(read.csv('./edgetable.csv',header = FALSE))
@@ -68,8 +67,8 @@ els <- els[order(els$to.scale.type,els$to.root)]
 els <- els[order(els$to.scale.type,els$to.root)]
 ```
 
-Plotting the Adjacency Matrix
-=============================
+Plotting the Adjacency Matrix<a name="matrix" />
+------------------------------------------------
 
 ``` r
 plot <- ggplot(els) + geom_raster(aes(x=factor(from),y=factor(to),fill=factor(distance)))   
@@ -80,8 +79,8 @@ plot + scale_x_discrete(limits=(els$from)[order(els$from.scale.type,els$from.roo
 
 ![](readme_files/figure-markdown_github/plotting-1.png)
 
-Python classes and functions for studying musical scales
---------------------------------------------------------
+Python classes and functions for studying musical scales<a name="classes" />
+----------------------------------------------------------------------------
 
 Created a Scale class to facilitate accessing the non-network properties of a musical scale, like the list of notes, scale type, and the root. Using a class also made easy converting the name and the notes to other data structures, like tuples and dictionaries on the fly.
 
@@ -131,8 +130,8 @@ C_HARMONIC_MAJOR = Scale("C", "Harmonic Major", [0, 2, 4, 5, 7, 8, 11])
 C_HARMONIC_MINOR = Scale("C", "Harmonic Minor", [0, 2, 3, 5, 7, 8, 11])
 ```
 
-Method for Building Network of Jazz Scales
-------------------------------------------
+Method for Building Network of Jazz Scales<a name="method" />
+-------------------------------------------------------------
 
 An adjacency matrix is a common way to represent edges between nodes on a graph.
 
