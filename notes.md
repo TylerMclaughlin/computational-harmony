@@ -36,7 +36,6 @@ Euler's second formula:  If G is a connected graph then
 
 ![](https://latex.codecogs.com/svg.latex?V&space;-&space;E&space;&plus;&space;F&space;=&space;2&space;-&space;2*G) 
 
-v - e + f = 2 - 2*g
 
 theorem 21 (Trudeau text):  If G is connected with v >= 3 and genus g then
 
@@ -46,6 +45,8 @@ theorem 21 (Trudeau text):  If G is connected with v >= 3 and genus g then
 For the <b>full</b> jazz scale network of the 57 unique scales, the number of edges 
 
 ![](https://latex.codecogs.com/svg.latex?E&space;=&space;\frac&space;{57&space;*&space;57&space;-&space;57}{2}&space;=&space;1596)
+
+Using the theorem above, the lower bound for the genus of our graph is <b>238.5</b>
 
 Old calculation to get R data-table length:  
 e =  (57 * 57  - 2 - 4) / 2 - 57.
