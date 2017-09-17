@@ -32,15 +32,24 @@ Addition of the set of Harmonic major scales violates planarity.
 
 # notes on network
 
-Euler's second formula:  If G is a connected graph then v - e + f = 2 - 2*g
+Euler's second formula:  If G is a connected graph then 
+
+![](https://latex.codecogs.com/svg.latex?V&space;-&space;E&space;&plus;&space;F&space;=&space;2&space;-&space;2*G) 
+
+v - e + f = 2 - 2*g
 
 theorem 21 (Trudeau text):  If G is connected with v >= 3 and genus g then
 
-g >= (1/6)*e - (1/2)(v-2)
+![](https://latex.codecogs.com/svg.latex?G&space;\geq&space;\frac{1}{6}*E&space;-&space;\frac{1}{2}(V-2))
 
-For the <b>full</b> jazz scale network of the 57 unique scales, the number of edges  e =  (57 * 57  - 2 - 4) / 2 - 57.
 
-Matrix picture here.
+For the <b>full</b> jazz scale network of the 57 unique scales, the number of edges 
+
+![](https://latex.codecogs.com/svg.latex?E&space;=&space;\frac&space;{57&space;*&space;57&space;-&space;57}{2}&space;=&space;1596)
+
+Old calculation to get R data-table length:  
+e =  (57 * 57  - 2 - 4) / 2 - 57.
+
 
 We are subtracting 57 because we want to exclude self-interactions, like C Major to C Major.  We subtract 2 because we wish to discard C wholetone -> F wholetone and its reverse, F wholetone -> C wholetone.  Distinct wholetone scales do not have common tones.  Subtracting 4 because there are two pairs of augmented scales with no common tones:  C augmented <-> B flat augmented and F augmented <-> G augmented.  Lastly, we divide the first term by two to consider only half of the off-diagonal matrix.  
 
