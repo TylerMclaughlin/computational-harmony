@@ -195,7 +195,7 @@ major.to.alt.net
 
 ### Circle of Fifths with Altered Scales
 
-```{r,circle.fifths}
+```{r,circle.fifths.alt}
 circle.of.fifths.alt <- delete.edges(major.to.alt.net,E(major.to.alt.net)[E(major.to.alt.net)$distance!=1])
 
 plot(circle.of.fifths.alt)

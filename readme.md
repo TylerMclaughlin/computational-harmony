@@ -136,6 +136,9 @@ make.igraph <- function(edge.list){
 Plotting Jazz Scale Networks
 ============================
 
+Major scales
+------------
+
 Let's pretend our harmonic universe consists only of major scales and their modes. This would describe most pop music, including songs that have key changes from diatonic scale to diatonic scale. Diatonic songs like "Let it Be" by the Beatles do not change keys and stay at a single node.
 
 ``` r
@@ -145,10 +148,10 @@ major.to.major.net = make.igraph(major.to.major.scales)
 major.to.major.net
 ```
 
-    ## IGRAPH df4114c UN-- 12 66 -- 
+    ## IGRAPH 2fcc6d3 UN-- 12 66 -- 
     ## + attr: name (v/c), from.scale.type (v/c), distance (e/n),
     ## | common.tones (e/c)
-    ## + edges from df4114c (vertex names):
+    ## + edges from 2fcc6d3 (vertex names):
     ##  [1] C Major      --F sharp Major C Major      --B Major      
     ##  [3] C Major      --B flat Major  C Major      --F Major      
     ##  [5] C Major      --E flat Major  C Major      --G Major      
@@ -183,6 +186,39 @@ plot(circle.of.fifths)
 ```
 
 ![](readme_files/figure-markdown_github/circle.fifths-1.png)
+
+Major Scales + Altered Scales
+-----------------------------
+
+``` r
+major.to.alt.scales = edge_list_raw[(from.scale.type=='Major')|(from.scale.type == 'Altered')][(to.scale.type=='Major')|(to.scale.type == 'Altered')]
+
+major.to.alt.net = make.igraph(major.to.alt.scales)
+major.to.alt.net
+```
+
+    ## IGRAPH 54f82d3 UN-- 24 276 -- 
+    ## + attr: name (v/c), from.scale.type (v/c), distance (e/n),
+    ## | common.tones (e/c)
+    ## + edges from 54f82d3 (vertex names):
+    ##  [1] C Major--F sharp Major   C Major--B Major        
+    ##  [3] C Major--B flat Major    C Major--B Altered      
+    ##  [5] C Major--F Major         C Major--F sharp Altered
+    ##  [7] C Major--E flat Major    C Major--E Altered      
+    ##  [9] C Major--A Altered       C Major--C sharp Altered
+    ## [11] C Major--G Major         C Major--D Major        
+    ## [13] C Major--D Altered       C Major--G sharp Altered
+    ## + ... omitted several edges
+
+### Circle of Fifths with Altered Scales
+
+``` r
+circle.of.fifths.alt <- delete.edges(major.to.alt.net,E(major.to.alt.net)[E(major.to.alt.net)$distance!=1])
+
+plot(circle.of.fifths.alt)
+```
+
+![](readme_files/figure-markdown_github/circle.fifths.alt-1.png)
 
 Sorting the Edge List for Plotting an Adjacency matrix
 ======================================================
