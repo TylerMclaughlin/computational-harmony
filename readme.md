@@ -19,7 +19,7 @@ Table of Contents
 ### Unexpected shapes in data
 
 After reading about unsupervised machine learning algorithms, like those in manifold learning, I became very interested in the shapes of datasets. I wanted to explore my own data sets and see how I could represent them in 2 or 3 dimensions.
-After some reading, I learned how the feature space of natural images is embedded on a **Klein bottle** (Carlsson et al. 2008), the famous topological curiosity that is locally 2-dimensional yet cannot be fully embedded or "placed" in 3 dimensions without self-intersecting.
+After some reading, I learned how the feature space of natural images is embedded on a **Klein bottle** \[@carlsson2008\], the famous topological curiosity that is locally 2-dimensional yet cannot be fully embedded or "placed" in 3 dimensions without self-intersecting.
 I found this to be one of those few times where the results of an investigation are so completely astonishing, that it changes the way I think. Carlsson's work inspired me to look at all data more deeply.
 
 ### Jazz is complex and structured, too
@@ -48,7 +48,7 @@ Mathematically we say they are isomorphic to the [quotient space](https://en.wik
 
 ### Manifolds and Music
 
-The combination of **high-dimensionality** and **circularity** suggests that an application of the topological theory of manifolds is necessary to study musical scales and harmony. In fact, in a 2006 study published in *Science*, Dr. Dmitri Tymoczko discovered the manifold structure of the voice-leading space(Tymoczko 2006). In this study, it was found that all chords of N pitches have an embedding on a manifold that is an N-dimensional analog to the Moebius strip. This embedding gives a representation in which one could visualize and intuitively understand certain complex chord changes, such as Chopin's E Minor Prelude that had challenged music theorists for decades.
+The combination of **high-dimensionality** and **circularity** suggests that an application of the topological theory of manifolds is necessary to study musical scales and harmony. In fact, in a 2006 study published in *Science*, Dr. Dmitri Tymoczko discovered the manifold structure of the voice-leading space\[@tymoczko2006\]. In this study, it was found that all chords of N pitches have an embedding on a manifold that is an N-dimensional analog to the Moebius strip. This embedding gives a representation in which one could visualize and intuitively understand certain complex chord changes, such as Chopin's E Minor Prelude that had challenged music theorists for decades.
 
 ### Project Goals
 
@@ -62,7 +62,17 @@ Tymoczko's work encouraged me to consider topological graph theory applied to th
 ----------------------------------------
 
 Some graphs can be embedded in the plane without intersection and these are called *planar graphs*. Others cannot be embedded in a plane because intersections are inevitable (the [utility graph](https://en.wikipedia.org/wiki/Three_utilities_problem) is a famous example).
-All can, however, be embedded in 3-dimensions, and all can be embedded in a manifold that is locally 2-dimensional everywhere, such as a [torus](https://en.wikipedia.org/wiki/Torus) (Trudeau 2013). Those that can be embedded in a torus, no surprise, are called [toroidal graphs](https://en.wikipedia.org/wiki/Toroidal_graph)
+All can, however, be embedded in 3-dimensions, and all can be embedded in a manifold that is locally 2-dimensional everywhere, such as a [torus](https://en.wikipedia.org/wiki/Torus) \[@trudeau2013\]. Those that can be embedded in a torus, no surprise, are called [toroidal graphs](https://en.wikipedia.org/wiki/Toroidal_graph)
+
+``` r
+library('curl')
+library('latexreadme')
+```
+
+Mathematical displays are marked off with `\[` and `\]`, as in
+*e*<sup>*i**π*</sup> = −1
+
+Before we can visualize scale networks, we have to reshape of the data.
 
 <a name="wrangling" /> Data Wrangling
 -------------------------------------
@@ -81,6 +91,7 @@ edge_list_raw <- data.table(read.csv('./edgetable.csv',header = FALSE))
 setnames(edge_list_raw,'V1','from')
 setnames(edge_list_raw,'V2','to')
 setnames(edge_list_raw,'V3','distance')
+edge_list_raw[,distance:=(7-distance)]
 setnames(edge_list_raw,'V4','common.tones')
 setnames(edge_list_raw,'V5','from.root')
 setnames(edge_list_raw,'V6','from.scale.type')
@@ -90,8 +101,91 @@ setnames(edge_list_raw,'V8','to.scale.type')
 
 We see that the data is 3186 rows. This means 3186 edges in the graph, which is equal to 57 \* 57 - 57 - 2\*(2 + 1) = 3186
 
-Sorting the Edge List for Plotting
-==================================
+### Converting to igraph
+
+Convert to standard igraph input format, which is a 'links' data.frame and a 'nodes' data.frame. We'll be subsetting the graph in many different ways before visualizing, so let's write a function to convert from our data.frame to igraph.
+
+``` r
+library(igraph)
+```
+
+    ## 
+    ## Attaching package: 'igraph'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     decompose, spectrum
+
+    ## The following object is masked from 'package:base':
+    ## 
+    ##     union
+
+``` r
+make.igraph <- function(edge.list){
+    links <- edge.list[,.(from,to,distance,common.tones)]
+    nodes <- unique(edge.list[,.(from,from.scale.type)])
+    # call igraph function to build igraph object
+    net <- graph_from_data_frame(d = links, vertices = nodes, directed = FALSE)
+    # remove multiple edges between same pair of nodes, while keeping the attribute 
+    #  of the max
+    net <- simplify(net, remove.multiple = T,edge.attr.comb = max) 
+    return(net)
+}
+```
+
+Plotting Jazz Scale Networks
+============================
+
+Let's pretend our harmonic universe consists only of major scales and their modes. This would describe most pop music, including songs that have key changes from diatonic scale to diatonic scale. Diatonic songs like "Let it Be" by the Beatles do not change keys and stay at a single node.
+
+``` r
+major.to.major.scales = edge_list_raw[from.scale.type=='Major'][to.scale.type=='Major']
+
+major.to.major.net = make.igraph(major.to.major.scales)
+major.to.major.net
+```
+
+    ## IGRAPH df4114c UN-- 12 66 -- 
+    ## + attr: name (v/c), from.scale.type (v/c), distance (e/n),
+    ## | common.tones (e/c)
+    ## + edges from df4114c (vertex names):
+    ##  [1] C Major      --F sharp Major C Major      --B Major      
+    ##  [3] C Major      --B flat Major  C Major      --F Major      
+    ##  [5] C Major      --E flat Major  C Major      --G Major      
+    ##  [7] C Major      --D Major       C Major      --G sharp Major
+    ##  [9] C Major      --C sharp Major C Major      --A Major      
+    ## [11] C Major      --E Major       F sharp Major--B Major      
+    ## [13] F sharp Major--B flat Major  F sharp Major--F Major      
+    ## + ... omitted several edges
+
+On first inspection, it looks like we have successfully built a network of Major scales.
+
+Since we are considering all distances, we are essentially building the *complete graph* because all Major scales are connected to other Major scales by some nonzero number of notes.
+
+We can use the properties of a complete graph to check that our. This Major-Major scale network has 12 nodes, and we have 66 edges, which is what we'd expect from the complete graph formula E = n*(n-1)/2 = 12*11/2 = 66. Here's a first shot at visualizing:
+
+``` r
+plot(major.to.major.net)
+```
+
+![](readme_files/figure-markdown_github/major.major.plot.1-1.png)
+
+Okay, let's do three things: filter edges by weight (i.e., isolate only the closest scale-scale edges), color edges by weight, and re-color scales.
+
+### Circle of Fifths
+
+The circle of fifths is essentially a network diagram of key signatures that differ by only 1 note. We can isolate this network in R by playing with the network edges via the following:
+
+``` r
+circle.of.fifths <- delete.edges(major.to.major.net,E(major.to.major.net)[E(major.to.major.net)$distance!=1])
+
+plot(circle.of.fifths)
+```
+
+![](readme_files/figure-markdown_github/circle.fifths-1.png)
+
+Sorting the Edge List for Plotting an Adjacency matrix
+======================================================
 
 We want to group all the scales by their type. Within a scale type, we want to order the root notes in a way that makes sense. Let's choose the circle of fifths because this will put neighboring major scales in proximity. This will see what this looks like for the Altered scales, Harmonic Minor scales, etc.
 
@@ -191,9 +285,3 @@ Given C Major, to which scales can we modulate without sounding too avant garde 
 
 References
 ==========
-
-Carlsson, Gunnar, Tigran Ishkhanov, Vin De Silva, and Afra Zomorodian. 2008. “On the Local Behavior of Spaces of Natural Images.” *International Journal of Computer Vision* 76 (1). Springer: 1–12.
-
-Trudeau, Richard J. 2013. *Introduction to Graph Theory*. Courier Corporation.
-
-Tymoczko, Dmitri. 2006. “The Geometry of Musical Chords.” *Science* 313 (5783). American Association for the Advancement of Science: 72–74.

@@ -4,7 +4,7 @@ author: "R Tyler McLaughlin"
 date: "8/22/2017"
 output: github_document
 code_folding: hide
-bibliography: bibliography.bibtex
+#bibliography: bibliography.bibtex
 
 ---
 
@@ -83,6 +83,18 @@ Some graphs can be embedded in the plane without intersection and these are call
 Others cannot be embedded in a plane because intersections are inevitable (the [utility graph](https://en.wikipedia.org/wiki/Three_utilities_problem) is a famous example).  
 All can, however, be embedded in 3-dimensions, and all can be embedded in a manifold that is locally 2-dimensional everywhere, such as a [torus](https://en.wikipedia.org/wiki/Torus) [@trudeau2013].  Those that can be embedded in a torus, no surprise, are called [toroidal graphs](https://en.wikipedia.org/wiki/Toroidal_graph)
 
+```{r}
+library('curl')
+library('latexreadme')
+```
+
+Mathematical displays are marked off with `\[` and `\]`, as in
+\[
+e^{i \pi} = -1
+\]
+
+Before we can visualize scale networks, we have to reshape of the data.
+
 ##<a name="wrangling" /> Data Wrangling
 
 ### R Libraries
@@ -104,6 +116,7 @@ edge_list_raw <- data.table(read.csv('./edgetable.csv',header = FALSE))
 setnames(edge_list_raw,'V1','from')
 setnames(edge_list_raw,'V2','to')
 setnames(edge_list_raw,'V3','distance')
+edge_list_raw[,distance:=(7-distance)]
 setnames(edge_list_raw,'V4','common.tones')
 setnames(edge_list_raw,'V5','from.root')
 setnames(edge_list_raw,'V6','from.scale.type')
@@ -113,7 +126,82 @@ setnames(edge_list_raw,'V8','to.scale.type')
 
 We see that the data is 3186 rows.  This means 3186 edges in the graph, which is equal to `r "57 * 57 - 57 - 2*(2 + 1) = 3186" ` 
 
-# Sorting the Edge List for Plotting
+### Converting to igraph 
+
+Convert to standard igraph input format, which is a 'links' data.frame and a 'nodes' data.frame.  We'll be subsetting the graph in many different ways before visualizing, so let's write a function to convert from our data.frame to igraph.
+
+``` {r,links.nodes}
+library(igraph)
+
+make.igraph <- function(edge.list){
+    links <- edge.list[,.(from,to,distance,common.tones)]
+    nodes <- unique(edge.list[,.(from,from.scale.type)])
+    # call igraph function to build igraph object
+    net <- graph_from_data_frame(d = links, vertices = nodes, directed = FALSE)
+    # remove multiple edges between same pair of nodes, while keeping the attribute 
+    #  of the max
+    net <- simplify(net, remove.multiple = T,edge.attr.comb = max) 
+    return(net)
+}
+```
+
+# Plotting Jazz Scale Networks
+
+## Major scales
+
+Let's pretend our harmonic universe consists only of major scales and their modes.  This would describe most pop music, including songs that have key changes from diatonic scale to diatonic scale.  Diatonic songs like "Let it Be" by the Beatles do not change keys and stay at a single node.
+
+```{r subset.major,echo = TRUE}
+
+major.to.major.scales = edge_list_raw[from.scale.type=='Major'][to.scale.type=='Major']
+
+major.to.major.net = make.igraph(major.to.major.scales)
+major.to.major.net
+```
+On first inspection, it looks like we have successfully built a network of Major scales.
+
+Since we are considering all distances, we are essentially building the *complete graph* because all Major scales are connected to other Major scales by some nonzero number of notes. 
+
+We can use the properties of a complete graph to check that our.
+This Major-Major scale network has 12 nodes, and we have 66 edges, which is what we'd expect from the complete graph formula E = n*(n-1)/2 =  12*11/2 = 66.   Here's a first shot at visualizing:
+
+
+```{r, major.major.plot.1}
+plot(major.to.major.net)
+```
+
+
+
+Okay, let's do three things:  filter edges by weight (i.e., isolate only the closest scale-scale edges), color edges by weight, and re-color scales.
+
+### Circle of Fifths
+
+The circle of fifths is essentially a network diagram of key signatures that differ by only 1 note. We can isolate this network in R by playing with the network edges via the following:
+
+```{r,circle.fifths}
+circle.of.fifths <- delete.edges(major.to.major.net,E(major.to.major.net)[E(major.to.major.net)$distance!=1])
+
+plot(circle.of.fifths)
+```
+
+## Major Scales + Altered Scales
+
+```{r,major.to.alt}
+major.to.alt.scales = edge_list_raw[(from.scale.type=='Major')|(from.scale.type == 'Altered')][(to.scale.type=='Major')|(to.scale.type == 'Altered')]
+
+major.to.alt.net = make.igraph(major.to.alt.scales)
+major.to.alt.net
+```
+
+### Circle of Fifths with Altered Scales
+
+```{r,circle.fifths}
+circle.of.fifths.alt <- delete.edges(major.to.alt.net,E(major.to.alt.net)[E(major.to.alt.net)$distance!=1])
+
+plot(circle.of.fifths.alt)
+```
+
+# Sorting the Edge List for Plotting an Adjacency matrix
 
 We want to group all the scales by their type.  Within a scale type, we want to order the root notes in a way that makes sense.  Let's choose the circle of fifths because this will put neighboring major scales in proximity.  This will see what this looks like for the Altered scales, Harmonic Minor scales, etc. 
 
