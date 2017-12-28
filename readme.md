@@ -311,7 +311,7 @@ plot(colored.alt.oct, vertex.label.family = 'Helvetica', vertex.label.cex = .7, 
 
 ![](readme_files/figure-markdown_github/alt.oct-1.png)
 
-### Altered and octatonic scales with
+### Altered and octatonic scales with distance less than 4.
 
 Let's relax the differing-by-one note criterion.
 
