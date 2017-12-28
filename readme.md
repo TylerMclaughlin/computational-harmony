@@ -72,7 +72,7 @@ library('latexreadme')
 Mathematical displays are marked off with `\[` and `\]`, as in
 *e*<sup>*i**π*</sup> = −1
 
-Before we can visualize scale networks, we have to reshape of the data.
+Before we can visualize scale networks, we have to reshape the data.
 
 <a name="wrangling" /> Data Wrangling
 -------------------------------------
@@ -90,8 +90,9 @@ library(data.table)
 edge_list_raw <- data.table(read.csv('./edgetable.csv',header = FALSE))
 setnames(edge_list_raw,'V1','from')
 setnames(edge_list_raw,'V2','to')
-setnames(edge_list_raw,'V3','distance')
-edge_list_raw[,distance:=(7-distance)]
+setnames(edge_list_raw,'V3','n.common.tones')
+# convert "number of common tones" to another, metric called "distance" that is sometimes equivalent.
+edge_list_raw[,distance := (7-n.common.tones)]
 setnames(edge_list_raw,'V4','common.tones')
 setnames(edge_list_raw,'V5','from.root')
 setnames(edge_list_raw,'V6','from.scale.type')
@@ -122,7 +123,7 @@ library(igraph)
 
 ``` r
 make.igraph <- function(edge.list){
-    links <- edge.list[,.(from,to,distance,common.tones)]
+    links <- edge.list[,.(from,to,n.common.tones,common.tones,distance)]
     nodes <- unique(edge.list[,.(from,from.scale.type)])
     # call igraph function to build igraph object
     net <- graph_from_data_frame(d = links, vertices = nodes, directed = FALSE)
@@ -139,19 +140,19 @@ Plotting Jazz Scale Networks
 Major scales
 ------------
 
-Let's pretend our harmonic universe consists only of major scales and their modes. This would describe most pop music, including songs that have key changes from diatonic scale to diatonic scale. Diatonic songs like "Let it Be" by the Beatles do not change keys and stay at a single node.
+Let's pretend our harmonic universe consists only of major scales and their modes. This would describe the vast majority of pop music, including songs that have key changes from diatonic scale to diatonic scale. Diatonic songs like "Let It Be" by the Beatles do not change keys and hence do not traverse edges and stay at a single node.
 
 ``` r
-major.to.major.scales = edge_list_raw[from.scale.type=='Major'][to.scale.type=='Major']
+major.to.major.scales <- edge_list_raw[from.scale.type=='Major'][to.scale.type=='Major']
 
-major.to.major.net = make.igraph(major.to.major.scales)
+major.to.major.net <- make.igraph(major.to.major.scales)
 major.to.major.net
 ```
 
-    ## IGRAPH 2fcc6d3 UN-- 12 66 -- 
-    ## + attr: name (v/c), from.scale.type (v/c), distance (e/n),
-    ## | common.tones (e/c)
-    ## + edges from 2fcc6d3 (vertex names):
+    ## IGRAPH b88b5c9 UN-- 12 66 -- 
+    ## + attr: name (v/c), from.scale.type (v/c), n.common.tones (e/n),
+    ## | common.tones (e/c), distance (e/n)
+    ## + edges from b88b5c9 (vertex names):
     ##  [1] C Major      --F sharp Major C Major      --B Major      
     ##  [3] C Major      --B flat Major  C Major      --F Major      
     ##  [5] C Major      --E flat Major  C Major      --G Major      
@@ -163,9 +164,9 @@ major.to.major.net
 
 On first inspection, it looks like we have successfully built a network of Major scales.
 
-Since we are considering all distances, we are essentially building the *complete graph* because all Major scales are connected to other Major scales by some nonzero number of notes.
+Since we are considering all distances, we are essentially building the **complete graph** because all Major scales are connected to other Major scales by some nonzero number of notes.
 
-We can use the properties of a complete graph to check that our. This Major-Major scale network has 12 nodes, and we have 66 edges, which is what we'd expect from the complete graph formula E = n*(n-1)/2 = 12*11/2 = 66. Here's a first shot at visualizing:
+We can use the properties of a [complete graph](https://en.wikipedia.org/wiki/Complete_graph) to double check that our network is correct. This Major-Major scale network has 12 nodes, and we have 66 edges, which matches the complete graph formula E = N*(N-1)/2 = 12*11/2 = 66. Here's a first shot at visualizing:
 
 ``` r
 plot(major.to.major.net)
@@ -173,16 +174,63 @@ plot(major.to.major.net)
 
 ![](readme_files/figure-markdown_github/major.major.plot.1-1.png)
 
-Okay, let's do three things: filter edges by weight (i.e., isolate only the closest scale-scale edges), color edges by weight, and re-color scales.
+### Improving plot aesthetics
+
+Okay, let's do two things: 1) color by scale type and 2) re-color/re-size edges by distance
+
+``` r
+#ramp <- colorRampPalette(c('blue','red'),space='Lab')
+ramp <- colorRampPalette(c(rgb(1,.647,0, .3),rgb(.529,0.808,0.98, .3)), alpha=TRUE)
+
+color.by.scale <-function(net,by.scale.type = FALSE){
+    if (by.scale.type == FALSE){
+      net.colors <- ramp(length(V(net))) 
+      V(net)$color <- net.colors[V(net)]
+    }
+    else {
+      V(net)$color=V(net)$from.scale.type
+      unique.scale.types <- unique(V(net)$from.scale.type)
+      net.colors <- ramp(length(unique.scale.types))
+      counter <- 1
+      for(i in unique.scale.types){
+          print(i)
+          V(net)$color=gsub(i,net.colors[counter],V(net)$color)
+          counter <- counter + 1
+      }
+    }
+    # experimental
+    #V(net)$label.color = 'white' 
+    V(net)$vertex.frame.color <- NA
+    V(net)$label.size= 4 
+    return(net)
+}
+```
+
+``` r
+colored.scale.net <- color.by.scale(major.to.major.net,by.scale.type = FALSE)
+
+
+plot(colored.scale.net,vertex.size = 35,vertex.label.size = 25) 
+```
+
+![](readme_files/figure-markdown_github/unnamed-chunk-3-1.png)
+
+filter edges by weight (so that we can do things like isolate only the closest scale-scale edges)
 
 ### Circle of Fifths
 
 The circle of fifths is essentially a network diagram of key signatures that differ by only 1 note. We can isolate this network in R by playing with the network edges via the following:
 
 ``` r
-circle.of.fifths <- delete.edges(major.to.major.net,E(major.to.major.net)[E(major.to.major.net)$distance!=1])
+isolate.edges <- function(net,int.distance){
+  delete.edges(net,E(net)[E(net)$distance!=int.distance])
+}
 
-plot(circle.of.fifths)
+#circle.of.fifths <- delete.edges(major.to.major.net,E(major.to.major.net)[E(major.to.major.net)$distance!=1])
+circle.of.fifths <- isolate.edges(major.to.major.net,1)
+circle.of.fifths <- color.by.scale(circle.of.fifths)
+
+plot(circle.of.fifths,vertex.size = 35)
 ```
 
 ![](readme_files/figure-markdown_github/circle.fifths-1.png)
@@ -197,10 +245,10 @@ major.to.alt.net = make.igraph(major.to.alt.scales)
 major.to.alt.net
 ```
 
-    ## IGRAPH 54f82d3 UN-- 24 276 -- 
-    ## + attr: name (v/c), from.scale.type (v/c), distance (e/n),
-    ## | common.tones (e/c)
-    ## + edges from 54f82d3 (vertex names):
+    ## IGRAPH 6cc0a0e UN-- 24 276 -- 
+    ## + attr: name (v/c), from.scale.type (v/c), n.common.tones (e/n),
+    ## | common.tones (e/c), distance (e/n)
+    ## + edges from 6cc0a0e (vertex names):
     ##  [1] C Major--F sharp Major   C Major--B Major        
     ##  [3] C Major--B flat Major    C Major--B Altered      
     ##  [5] C Major--F Major         C Major--F sharp Altered
@@ -213,12 +261,245 @@ major.to.alt.net
 ### Circle of Fifths with Altered Scales
 
 ``` r
-circle.of.fifths.alt <- delete.edges(major.to.alt.net,E(major.to.alt.net)[E(major.to.alt.net)$distance!=1])
+circle.of.fifths.alt <- isolate.edges(major.to.alt.net,1) 
+colored.scale.alt.net <- color.by.scale(circle.of.fifths.alt,by.scale.type = TRUE)
+```
 
-plot(circle.of.fifths.alt)
+    ## [1] "Major"
+    ## [1] "Altered"
+
+``` r
+plot(colored.scale.alt.net, vertex.label.family = 'Helvetica', vertex.label.dist = 3, font.cex = 2, vertex.size = 15,vertex.label.degree = 0, edge.color = 'black')
 ```
 
 ![](readme_files/figure-markdown_github/circle.fifths.alt-1.png)
+
+Octatonic scales in relation to Altered scales
+----------------------------------------------
+
+``` r
+alt.oct.scales = edge_list_raw[(from.scale.type=='Octatonic')|(from.scale.type == 'Altered')][(to.scale.type=='Octatonic')|(to.scale.type == 'Altered')]
+
+alt.oct.net = make.igraph(alt.oct.scales)
+alt.oct.net
+```
+
+    ## IGRAPH 57b5c28 UN-- 15 105 -- 
+    ## + attr: name (v/c), from.scale.type (v/c), n.common.tones (e/n),
+    ## | common.tones (e/c), distance (e/n)
+    ## + edges from 57b5c28 (vertex names):
+    ##  [1] B Altered      --F sharp Altered B Altered      --E Altered      
+    ##  [3] B Altered      --A Altered       B Altered      --C sharp Altered
+    ##  [5] B Altered      --F Octatonic     B Altered      --D Altered      
+    ##  [7] B Altered      --G sharp Altered B Altered      --G Octatonic    
+    ##  [9] B Altered      --F Altered       B Altered      --E flat Altered 
+    ## [11] B Altered      --C Octatonic     B Altered      --G Altered      
+    ## [13] B Altered      --B flat Altered  B Altered      --C Altered      
+    ## + ... omitted several edges
+
+``` r
+circle.alt.oct <- isolate.edges(alt.oct.net,1) 
+colored.alt.oct <- color.by.scale(circle.alt.oct,by.scale.type = TRUE)
+```
+
+    ## [1] "Altered"
+    ## [1] "Octatonic"
+
+``` r
+plot(colored.alt.oct, vertex.label.family = 'Helvetica', vertex.label.cex = .7, vertex.size = 35,vertex.label.degree = 0, edge.color = 'black')
+```
+
+![](readme_files/figure-markdown_github/alt.oct-1.png)
+
+### Altered and octatonic scales with
+
+Let's relax the differing-by-one note criterion.
+
+``` r
+keep.edges.lte.dist <- function(net,int.distance){
+  delete.edges(net,E(net)[E(net)$distance>=int.distance])
+}
+
+alt.oct.2 <- keep.edges.lte.dist(alt.oct.net,3)
+alt.oct.2 <- color.by.scale(alt.oct.2,by.scale.type = TRUE)
+```
+
+    ## [1] "Altered"
+    ## [1] "Octatonic"
+
+``` r
+plot(alt.oct.2, vertex.label.family = 'Helvetica', vertex.label.cex = .7, vertex.size = 35,vertex.label.degree = 0, edge.color = 'black')
+```
+
+![](readme_files/figure-markdown_github/distance.over.3-1.png)
+
+Major scales, altered scales, and octatonic scales combined
+-----------------------------------------------------------
+
+``` r
+major.alt.oct.scales = edge_list_raw[(from.scale.type=='Octatonic')|(from.scale.type=='Altered')|(from.scale.type=='Major')][(to.scale.type=='Altered')|(to.scale.type=='Octatonic')|(to.scale.type=='Major')]#&&(to.scale.type=='Altered')]
+
+major.alt.oct.net = make.igraph(major.alt.oct.scales)
+major.alt.oct.net
+```
+
+    ## IGRAPH bbc6a88 UN-- 27 351 -- 
+    ## + attr: name (v/c), from.scale.type (v/c), n.common.tones (e/n),
+    ## | common.tones (e/c), distance (e/n)
+    ## + edges from bbc6a88 (vertex names):
+    ##  [1] C Major--F sharp Major   C Major--B Major        
+    ##  [3] C Major--B flat Major    C Major--B Altered      
+    ##  [5] C Major--F Major         C Major--F sharp Altered
+    ##  [7] C Major--E flat Major    C Major--E Altered      
+    ##  [9] C Major--A Altered       C Major--C sharp Altered
+    ## [11] C Major--G Major         C Major--F Octatonic    
+    ## [13] C Major--D Major         C Major--D Altered      
+    ## + ... omitted several edges
+
+``` r
+circle.major.alt.oct <- isolate.edges(major.alt.oct.net,1) 
+colored.major.alt.oct <- color.by.scale(circle.major.alt.oct,by.scale.type = TRUE)
+```
+
+    ## [1] "Major"
+    ## [1] "Altered"
+    ## [1] "Octatonic"
+
+``` r
+plot(colored.major.alt.oct, vertex.label.family = 'Helvetica', vertex.label.cex = .7, vertex.size = 35,vertex.label.degree = 0, edge.color = 'black')
+```
+
+![](readme_files/figure-markdown_github/major.alt.oct-1.png)
+
+Isolating and coloring edges by number of common tones
+------------------------------------------------------
+
+``` r
+keep.edges.gte.common.tones <- function(net,int.n.common.tones){
+  delete.edges(net,E(net)[E(net)$n.common.tones < int.n.common.tones])
+}
+library(colorspace)
+color.edges <- function(net,mode = 'by.common.tones')
+{
+  if(mode == 'by.common.tones'){
+      E(net)$color <- E(net)$n.common.tones
+      n <- unique(E(net)$n.common.tones)
+      N <- length(n)
+      rainbow.ramp <- diverge_hcl(N,fixup = TRUE,power=2)#,  
+               #start = 0, end = max(1, N - 1)/n, alpha = 1)
+      net.colors <- rainbow.ramp
+      counter <- 1
+      for(i in n){
+          print(i)
+          E(net)$color=gsub(i,net.colors[counter],E(net)$color)
+          counter <- counter + 1
+      } 
+      print(E(net)$color)
+  }
+  else if(mode == 'by.distance'){
+    print('feature coming soon!')
+  }
+    else{
+      print('feature coming soon!')
+    }
+  
+  return(net)
+  
+}
+```
+
+``` r
+m.2.m.5ct <- keep.edges.gte.common.tones(major.to.major.net,4)
+
+m.2.m.5ct <- color.by.scale(m.2.m.5ct,by.scale.type = FALSE)
+
+m.2.m.5ct <- color.edges(m.2.m.5ct)
+```
+
+    ## [1] 5
+    ## [1] 6
+    ## [1] 4
+    ##  [1] "#023FA5" "#E2E2E2" "#8E063B" "#E2E2E2" "#023FA5" "#8E063B" "#E2E2E2"
+    ##  [8] "#8E063B" "#023FA5" "#E2E2E2" "#8E063B" "#023FA5" "#8E063B" "#8E063B"
+    ## [15] "#023FA5" "#023FA5" "#E2E2E2" "#E2E2E2" "#E2E2E2" "#8E063B" "#023FA5"
+    ## [22] "#8E063B" "#023FA5" "#023FA5" "#8E063B" "#8E063B" "#E2E2E2" "#023FA5"
+    ## [29] "#E2E2E2" "#023FA5" "#8E063B" "#E2E2E2" "#023FA5" "#E2E2E2" "#8E063B"
+    ## [36] "#E2E2E2"
+
+``` r
+coords <- layout_in_circle(m.2.m.5ct, order =
+          order(V(m.2.m.5ct)$from.scale.type))
+
+plot(m.2.m.5ct, vertex.label.family = 'Helvetica',layout = coords, vertex.label.cex = .7, vertex.size = 35,vertex.label.degree = 0 )
+```
+
+![](readme_files/figure-markdown_github/test.n.common.tones-1.png)
+
+Altered and Wholetone scales
+----------------------------
+
+``` r
+alt.2.wt.net <- edge_list_raw[(from.scale.type=='Wholetone')|(from.scale.type=='Altered')][(to.scale.type=='Wholetone')|(to.scale.type=='Altered')]
+alt.2.wt.net <- make.igraph(alt.2.wt.net)
+alt.2.wt.5ct <- keep.edges.gte.common.tones(alt.2.wt.net,5)
+
+alt.2.wt.5ct <- color.by.scale(alt.2.wt.5ct,by.scale.type = FALSE)
+
+alt.2.wt.5ct <- color.edges(alt.2.wt.5ct)
+```
+
+    ## [1] 5
+    ##  [1] "#023FA5" "#023FA5" "#023FA5" "#023FA5" "#023FA5" "#023FA5" "#023FA5"
+    ##  [8] "#023FA5" "#023FA5" "#023FA5" "#023FA5" "#023FA5" "#023FA5" "#023FA5"
+    ## [15] "#023FA5" "#023FA5" "#023FA5" "#023FA5" "#023FA5" "#023FA5" "#023FA5"
+    ## [22] "#023FA5" "#023FA5" "#023FA5"
+
+``` r
+plot(alt.2.wt.5ct, vertex.label.family = 'Helvetica', vertex.label.cex = .7, vertex.size = 35,vertex.label.degree = 0 )
+```
+
+![](readme_files/figure-markdown_github/alt.wt-1.png)
+
+### This subsection is a work in progress
+
+``` r
+# edge_list_raw <- data.table(lapply(edge_list_raw,function(x){
+#                            gsub("Harmonic ","Harmonic.",x)}))
+# non.aug.wt.scales = edge_list_raw[(from.scale.type!='Augmented')&&(from.scale.type!='Wholetone')][(to.scale.type!='Augmented')&&(to.scale.type !='Wholetone')]#&&(to.scale.type=='Altered')] 
+# non.aug.wt.net = make.igraph(non.aug.wt.scales)
+# non.aug.wt.net
+# 
+# non.aug.wt <- isolate.edges(non.aug.wt.net,1) 
+# colored.non.aug.wt <- color.by.scale(non.aug.wt,by.scale.type = TRUE)
+# 
+# plot(colored.non.aug.wt, vertex.label.family = 'Helvetica', vertex.label.cex = .7, vertex.size = 35,vertex.label.degree = 0, edge.color = 'black')
+```
+
+``` r
+aug.wt.scales <- edge_list_raw[(from.scale.type =='Augmented')|(from.scale.type =='Wholetone')][(to.scale.type=='Augmented')|(to.scale.type =='Wholetone')]#&&(to.scale.type=='Altered')] 
+aug.wt.net = make.igraph(aug.wt.scales)
+aug.wt.net
+```
+
+    ## IGRAPH 933e0f5 UN-- 6 12 -- 
+    ## + attr: name (v/c), from.scale.type (v/c), n.common.tones (e/n),
+    ## | common.tones (e/c), distance (e/n)
+    ## + edges from 933e0f5 (vertex names):
+    ##  [1] F Wholetone     --F Augmented      F Wholetone     --B flat Augmented
+    ##  [3] F Wholetone     --C Augmented      F Wholetone     --G Augmented     
+    ##  [5] F Augmented     --B flat Augmented F Augmented     --C Augmented     
+    ##  [7] F Augmented     --C Wholetone      B flat Augmented--G Augmented     
+    ##  [9] B flat Augmented--C Wholetone      C Augmented     --G Augmented     
+    ## [11] C Augmented     --C Wholetone      G Augmented     --C Wholetone
+
+``` r
+aug.wt <- isolate.edges(aug.wt.net,4) 
+colored.aug.wt <- color.by.scale(aug.wt,by.scale.type = FALSE)
+
+plot(colored.aug.wt, vertex.label.family = 'Helvetica', vertex.label.cex = .7, vertex.size = 35,vertex.label.degree = 0, edge.color = 'black')
+```
+
+![](readme_files/figure-markdown_github/aug.wt-1.png)
 
 Sorting the Edge List for Plotting an Adjacency matrix
 ======================================================
@@ -246,7 +527,7 @@ Plotting the Adjacency Matrix<a name="matrix" />
 ------------------------------------------------
 
 ``` r
-plot <- ggplot(els) + geom_raster(aes(x=factor(from),y=factor(to),fill=factor(distance)))   
+plot <- ggplot(els) + geom_raster(aes(x=factor(from),y=factor(to),fill=factor(n.common.tones)))   
 plot + scale_x_discrete(limits=(els$from)[order(els$from.scale.type,els$from.root)]) + 
   scale_y_discrete(limits=(els$to)[order(els$to.scale.type,els$to.root)]) +
   theme(axis.text.x=element_text(angle=90)) + scale_fill_brewer()
