@@ -1,4 +1,4 @@
-Towards a Topological Graph Theory of Jazz Scales
+Network Theory of Jazz Scales
 ================
 R Tyler McLaughlin
 8/22/2017
@@ -15,6 +15,13 @@ Table of Contents
 
 <a name="motivation" /> Motivation
 ----------------------------------
+
+### Jazz Scales
+
+There are thousands of musical scales.  When a composer decides to make a key change, or when a jazz improviser decides to arpeggiate a chord from a new scale, there is some intuition as to what new scales are eligible.  But are there any guiding principles for how to change scales? 
+
+How do composers decide what keys will sound good in a key change?   I believe the answer can be found in the mathematical properties of musical scale networks.
+
 
 ### Unexpected shapes in data
 
